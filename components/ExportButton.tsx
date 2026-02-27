@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/contexts/ToastContext";
 
 export function ExportButton() {
   const [showMenu, setShowMenu] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const { toast: showToast } = useToast();
 
   const handleExportPDF = async () => {
     setExporting(true);
@@ -32,9 +34,11 @@ export function ExportButton() {
         pdf.addImage(imgData, "PNG", 0, -(pdfH * 0.95), pdfW, imgH);
       }
       pdf.save("banking-command-centre.pdf");
+      showToast("Exported to PDF successfully", "success");
     } catch (err) {
       console.error("Export failed:", err);
       window.print();
+      showToast("Export failed — opened print dialog instead", "error");
     } finally {
       setExporting(false);
       setShowMenu(false);
@@ -44,6 +48,7 @@ export function ExportButton() {
   const handlePrint = () => {
     window.print();
     setShowMenu(false);
+    showToast("Print dialog opened", "info");
   };
 
   return (

@@ -63,4 +63,19 @@ html.light .glass-panel {
     @apply bg-midnight-light/40 backdrop-blur-md border border-white/10 rounded-xl;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   }
+
+  .alert-thresholds-scroll::-webkit-scrollbar {
+    width: 8px;
+  }
+  .alert-thresholds-scroll::-webkit-scrollbar-track {
+    background: rgba(30, 41, 59, 0.3);
+    border-radius: 4px;
+  }
+  .alert-thresholds-scroll::-webkit-scrollbar-thumb {
+    background: rgb(71, 85, 105);
+    border-radius: 4px;
+  }
+  .alert-thresholds-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgb(100, 116, 139);
+  }
 }

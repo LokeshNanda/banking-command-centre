@@ -21,9 +21,9 @@ const DASHBOARD_SLUGS = [
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const dashboard = searchParams.get("dashboard");
-  const timeRange = searchParams.get("timeRange") ?? "today";
+  const timeRange = (searchParams.get("timeRange") ?? "today") as "today" | "mtd" | "qtd" | "ytd";
 
-  const data = generateMockData();
+  const data = generateMockData(timeRange);
   const insights = generateAIInsights(data);
 
   const response: Record<string, unknown> = {

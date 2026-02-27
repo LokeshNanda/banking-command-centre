@@ -27,9 +27,12 @@ import { ExportButton } from "@/components/ExportButton";
 import { TimeRangeSelector, type TimeRange } from "@/components/TimeRangeSelector";
 import { PeerBenchmarkOverlay } from "@/components/PeerBenchmarkOverlay";
 import { MeetingMode } from "@/components/MeetingMode";
+import { ExecutiveSummaryMode } from "@/components/ExecutiveSummaryMode";
 import { ViewPresetSelector, type ViewPreset } from "@/components/ViewPresetSelector";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { NLQueryBar } from "@/components/NLQueryBar";
+import { AlertHistoryPanel } from "@/components/AlertHistoryPanel";
+import { recordBreachIfNeeded } from "@/lib/alertHistory";
 import type { MetricsPayload, ExtendedMetricsPayload } from "@/lib/mockBankingData";
 
 const REFRESH_INTERVAL_MS = 20_000;
@@ -75,17 +78,17 @@ export default function CommandCentrePage() {
   const [thresholdsVersion, setThresholdsVersion] = useState(0);
   const [timeRange, setTimeRange] = useState<TimeRange>("today");
   const [meetingMode, setMeetingMode] = useState(false);
+  const [summaryMode, setSummaryMode] = useState(false);
+  const [showAlertHistory, setShowAlertHistory] = useState(false);
   const [viewPreset, setViewPreset] = useState<ViewPreset>("default");
 
   const showPanel = (id: string) => PRESET_PANELS[viewPreset].includes(id);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "m" || e.key === "M") {
-        if (!e.ctrlKey && !e.metaKey && !e.altKey) {
-          setMeetingMode((v) => !v);
-        }
-      }
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === "m" || e.key === "M") setMeetingMode((v) => !v);
+      if (e.key === "s" || e.key === "S") setSummaryMode((v) => !v);
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -95,6 +98,7 @@ export default function CommandCentrePage() {
     try {
       const res = await fetch(`/api/metrics?timeRange=${timeRange}`);
       const json = await res.json();
+      recordBreachIfNeeded(json.kpis, data?.kpis);
       setData(json);
       setLastRefresh(new Date());
     } catch (err) {
@@ -134,9 +138,24 @@ export default function CommandCentrePage() {
         topRiskHighlight={
           data.earlyWarning?.composite && data.earlyWarning.composite >= 50
             ? "Early warning score elevated. Review credit and liquidity sub-domains."
-            : undefined
+            : "Monitor NPA trajectory in Retail and MSME segments."
         }
       />
+
+      <ExecutiveSummaryMode
+        isActive={summaryMode}
+        onExit={() => setSummaryMode(false)}
+        kpis={data.kpis}
+        insights={data.aiInsights ?? []}
+        topRiskHighlight={
+          data.earlyWarning?.composite && data.earlyWarning.composite >= 50
+            ? "Early warning score elevated. Review credit and liquidity sub-domains."
+            : "Monitor NPA trajectory in Retail and MSME segments."
+        }
+        currency={currency}
+      />
+
+      <AlertHistoryPanel isOpen={showAlertHistory} onClose={() => setShowAlertHistory(false)} />
 
       {/* Header */}
       <motion.header
@@ -183,6 +202,46 @@ export default function CommandCentrePage() {
                 />
               </svg>
             </button>
+            <button
+              onClick={() => setSummaryMode(true)}
+              className="p-2 rounded-lg border border-slate-600/50 hover:border-slate-500 hover:bg-slate-800/30 transition-colors"
+              title="Executive Summary (S)"
+              aria-label="Executive summary"
+            >
+              <svg
+                className="w-4 h-4 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+            </button>
+            <button
+              onClick={() => setShowAlertHistory(true)}
+              className="p-2 rounded-lg border border-slate-600/50 hover:border-slate-500 hover:bg-slate-800/30 transition-colors"
+              title="Alert History"
+              aria-label="View alert history"
+            >
+              <svg
+                className="w-4 h-4 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </button>
             <ExportButton />
             <button
               onClick={() => setCurrency((c) => (c === "INR" ? "USD" : "INR"))}
@@ -193,12 +252,12 @@ export default function CommandCentrePage() {
             <ThemeToggle />
             <button
               onClick={() => setShowAlertModal(true)}
-              className="p-2 rounded-lg border border-slate-600/50 hover:border-slate-500 hover:bg-slate-800/30 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-600/50 hover:border-slate-500 hover:bg-slate-800/30 transition-colors"
               title="Configure alert thresholds"
               aria-label="Configure alert thresholds"
             >
               <svg
-                className="w-4 h-4 text-slate-400"
+                className="w-4 h-4 text-slate-400 shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -216,6 +275,7 @@ export default function CommandCentrePage() {
                   d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                 />
               </svg>
+              <span className="text-xs text-slate-400 hidden sm:inline">Thresholds</span>
             </button>
           </div>
         </div>

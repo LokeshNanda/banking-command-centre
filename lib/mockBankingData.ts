@@ -265,14 +265,30 @@ export interface MetricsPayload {
   growth: GrowthData;
 }
 
-export function generateMockData(): ExtendedMetricsPayload {
+/** Time-range adjustments: Today = snapshot, MTD/QTD/YTD = period aggregates with distinct values */
+const TIME_RANGE_ADJUSTMENTS = {
+  today: { advancesMult: 1, npaOffset: 0, nimOffset: 0, lcrOffset: 0, churnOffset: 0, riskOffset: 0 },
+  mtd:  { advancesMult: 1.07, npaOffset: 0.15, nimOffset: -0.05, lcrOffset: -2, churnOffset: 0.5, riskOffset: 1.5 },
+  qtd:  { advancesMult: 1.18, npaOffset: 0.25, nimOffset: -0.08, lcrOffset: -3, churnOffset: 1.0, riskOffset: 2.5 },
+  ytd:  { advancesMult: 1.38, npaOffset: 0.35, nimOffset: -0.12, lcrOffset: -4, churnOffset: 1.5, riskOffset: 3.5 },
+} as const;
+
+export function generateMockData(timeRange: "today" | "mtd" | "qtd" | "ytd" = "today"): ExtendedMetricsPayload {
+  const adj = TIME_RANGE_ADJUSTMENTS[timeRange];
+  const baseAdvances = vary(4_85_000, 8000);
+  const baseNpa = vary(4.2, 0.3);
+  const baseNim = vary(3.85, 0.1);
+  const baseLcr = vary(118, 4);
+  const baseChurn = vary(12.4, 1.2);
+  const baseRisk = vary(62, 5);
+
   const kpis: ExecutiveKPIs = {
-    totalAdvances: Math.round(vary(4_85_000, 8000) * 100) / 100, // ₹ Cr
-    grossNpaPercent: Math.round(vary(4.2, 0.3) * 100) / 100,
-    nimPercent: Math.round(vary(3.85, 0.1) * 100) / 100,
-    lcrPercent: Math.round(vary(118, 4) * 100) / 100,
-    churnRiskPercent: Math.round(vary(12.4, 1.2) * 100) / 100,
-    enterpriseRiskIndex: Math.round(vary(62, 5) * 10) / 10,
+    totalAdvances: Math.round((baseAdvances * adj.advancesMult) * 100) / 100,
+    grossNpaPercent: Math.round((baseNpa + adj.npaOffset) * 100) / 100,
+    nimPercent: Math.round((baseNim + adj.nimOffset) * 100) / 100,
+    lcrPercent: Math.round((baseLcr + adj.lcrOffset) * 100) / 100,
+    churnRiskPercent: Math.round((baseChurn + adj.churnOffset) * 100) / 100,
+    enterpriseRiskIndex: Math.round((baseRisk + adj.riskOffset) * 10) / 10,
   };
 
   const creditRisk: CreditRiskData[] = [];
