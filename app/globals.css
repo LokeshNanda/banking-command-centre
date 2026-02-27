@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --midnight: #0f172a;
+  --midnight-light: #1e293b;
+  --neon-cyan: #22d3ee;
+  --neon-blue: #38bdf8;
+}
+
+body {
+  background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e293b 100%);
+  min-height: 100vh;
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-midnight-light/40 backdrop-blur-glass border border-white/10 rounded-xl;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+}
