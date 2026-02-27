@@ -4,7 +4,20 @@
  * 3-4 bullets, no jargon, action-oriented
  */
 
-import type { MetricsPayload } from "./mockBankingData";
+import type { ExtendedMetricsPayload, MetricsPayload } from "./mockBankingData";
+
+const SLUG_TO_KEY: Record<string, keyof typeof INSIGHT_TEMPLATES> = {
+  "credit-risk": "creditRisk",
+  liquidity: "liquidity",
+  "customer-profitability": "customer",
+  fraud: "fraud",
+  growth: "growth",
+  collections: "collections",
+  treasury: "treasury",
+  "branch-network": "branchNetwork",
+  compliance: "compliance",
+  "operational-risk": "operationalRisk",
+};
 
 const INSIGHT_TEMPLATES = {
   creditRisk: [
@@ -30,6 +43,12 @@ const INSIGHT_TEMPLATES = {
     "Velocity breaches contained; geo-risk patterns under monitoring.",
     "Fraud pulse trending within normal bounds—maintain vigilance.",
     "High-severity alerts down 12% vs prior period.",
+  ],
+  growth: [
+    "Advances growth above industry; CASA ratio stable.",
+    "Digital adoption accelerating; mobile channel leads.",
+    "Channel mix shifting—branch footfall declining as expected.",
+    "Growth momentum strong; maintain risk discipline.",
   ],
   collections: [
     "Collections recovery improving in 0-30 DPD bucket; focus on 180+ aging.",
@@ -125,4 +144,87 @@ export function generateAIInsights(data: MetricsPayload): string[] {
   if (extra) insights.push(extra);
 
   return insights.slice(0, 5);
+}
+
+export function generateDashboardInsights(
+  slug: string,
+  data: ExtendedMetricsPayload
+): string[] {
+  const key = SLUG_TO_KEY[slug];
+  if (!key || !INSIGHT_TEMPLATES[key]) {
+    return [];
+  }
+  const templates = INSIGHT_TEMPLATES[key];
+  const seed = Date.now() % 1000;
+  const insights: string[] = [];
+
+  switch (key) {
+    case "creditRisk": {
+      const maxNpa = Math.max(...data.creditRisk.map((c) => c.npaPercent));
+      const worstCell = data.creditRisk.find((c) => c.npaPercent === maxNpa);
+      if (maxNpa >= 5) {
+        insights.push(templates[0]);
+      } else {
+        insights.push(selectInsights(templates, 1, seed)[0] ?? templates[0]);
+      }
+      if (worstCell) {
+        insights.push(
+          `${worstCell.region} and ${worstCell.sector} show highest NPA at ${worstCell.npaPercent}%—prioritise review.`
+        );
+      }
+      const rest = selectInsights(templates, 2, seed + 1).filter((t) => !insights.includes(t));
+      insights.push(...rest);
+      break;
+    }
+    case "liquidity": {
+      if (data.kpis.lcrPercent < 100) {
+        insights.push("LCR below regulatory minimum—urgent funding action required.");
+      } else {
+        insights.push(selectInsights(templates, 1, seed)[0] ?? templates[0]);
+      }
+      if (data.stressScenarios?.some((s) => s.lcrImpact < 80)) {
+        insights.push("Combined stress scenario pushes LCR below 80%—review contingency funding.");
+      }
+      const rest = selectInsights(templates, 2, seed + 2).filter((t) => !insights.includes(t));
+      insights.push(...rest);
+      break;
+    }
+    case "customer": {
+      const maxChurn = Math.max(...data.customerIntelligence.map((c) => c.churnProbability));
+      const atRiskSeg = data.customerIntelligence.find((c) => c.churnProbability === maxChurn);
+      if (maxChurn >= 15) {
+        insights.push(templates[0]);
+      } else {
+        insights.push(selectInsights(templates, 1, seed)[0] ?? templates[0]);
+      }
+      if (atRiskSeg) {
+        insights.push(
+          `${atRiskSeg.segment} segment shows ${atRiskSeg.churnProbability}% churn risk—outreach recommended.`
+        );
+      }
+      const rest = selectInsights(templates, 2, seed + 3).filter((t) => !insights.includes(t));
+      insights.push(...rest);
+      break;
+    }
+    case "fraud": {
+      const highCount = data.fraudSignals.filter((f) => f.severity === "high").length;
+      if (highCount >= 3) {
+        insights.push("Multiple high-severity geo hotspots—escalate to fraud team.");
+      } else {
+        insights.push(selectInsights(templates, 1, seed)[0] ?? templates[0]);
+      }
+      insights.push(...selectInsights(templates, 3, seed + 4));
+      break;
+    }
+    case "growth":
+    case "collections":
+    case "treasury":
+    case "branchNetwork":
+    case "compliance":
+    case "operationalRisk":
+    default:
+      insights.push(...selectInsights(templates, 4, seed));
+  }
+
+  return insights.slice(0, 4);
 }

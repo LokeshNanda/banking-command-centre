@@ -133,6 +133,100 @@ export interface GrowthData {
   channelSplit: { channel: string; share: number }[];
 }
 
+// Extended data for drill-down dashboards
+export interface SectorNpaTrend {
+  sector: string;
+  month: string;
+  npaPercent: number;
+}
+
+export interface StressScenario {
+  scenario: string;
+  lcrImpact: number;
+}
+
+export interface ProductHolding {
+  segment: string;
+  product: string;
+  penetration: number;
+}
+
+export interface FraudTimelineEntry {
+  date: string;
+  count: number;
+  severity: "low" | "medium" | "high";
+}
+
+export interface AdvancesTrend {
+  month: string;
+  value: number;
+}
+
+export interface RecoveryTrend {
+  bucket: string;
+  month: string;
+  rate: number;
+}
+
+export interface VarHistory {
+  date: string;
+  value: number;
+}
+
+export interface FilingCalendarEntry {
+  name: string;
+  due: string;
+  status: "on_track" | "at_risk" | "overdue";
+}
+
+export interface IncidentTrend {
+  category: string;
+  month: string;
+  count: number;
+}
+
+export interface ExtendedMetricsPayload extends MetricsPayload {
+  // Credit Risk
+  sectorNpaTrend: SectorNpaTrend[];
+  sectorAggregate: { sector: string; exposure: number; npaPercent: number }[];
+  netNpaPercent: number;
+  slippageRate: number;
+  provisionCoverage: number;
+  topRiskRegion: string;
+  // Liquidity
+  nsfrPercent: number;
+  stressScenarios: StressScenario[];
+  gap3190: number;
+  hqla: number;
+  // Customer
+  productHolding: ProductHolding[];
+  crossSellRatio: number;
+  atRiskHvCustomers: number;
+  // Fraud
+  fraudTimeline: FraudTimelineEntry[];
+  anomalyCount: number;
+  velocityBreaches: number;
+  geoHotspots: number;
+  // Growth
+  advancesTrend: AdvancesTrend[];
+  casaTrend: { month: string; value: number }[];
+  // Collections
+  recoveryTrend: RecoveryTrend[];
+  dpd180Exposure: number;
+  // Treasury
+  varHistory: VarHistory[];
+  // Branch
+  branchRanking: { branchId: string; region: string; score: number; deposits: number; advances: number }[];
+  underperformers: number;
+  // Compliance
+  filingCalendar: FilingCalendarEntry[];
+  compliantPercent: number;
+  pendingFilings: number;
+  // Operational
+  incidentTrend: IncidentTrend[];
+  kriRedCount: number;
+}
+
 export interface MetricsPayload {
   kpis: ExecutiveKPIs;
   creditRisk: CreditRiskData[];
@@ -147,7 +241,7 @@ export interface MetricsPayload {
   growth: GrowthData;
 }
 
-export function generateMockData(): MetricsPayload {
+export function generateMockData(): ExtendedMetricsPayload {
   const kpis: ExecutiveKPIs = {
     totalAdvances: Math.round(vary(4_85_000, 8000) * 100) / 100, // ₹ Cr
     grossNpaPercent: Math.round(vary(4.2, 0.3) * 100) / 100,
@@ -253,6 +347,139 @@ export function generateMockData(): MetricsPayload {
     ],
   };
 
+  // Credit Risk extended data
+  const sectorAggregate = SECTORS.slice(0, 6).map((sector) => {
+    const sectorData = creditRisk.filter((c) => c.sector === sector);
+    const exposure = sectorData.reduce((s, c) => s + c.exposure, 0);
+    const avgNpa =
+      sectorData.length > 0
+        ? sectorData.reduce((s, c) => s + c.npaPercent, 0) / sectorData.length
+        : 0;
+    return { sector, exposure, npaPercent: Math.round(avgNpa * 100) / 100 };
+  });
+  const months6 = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
+  const sectorNpaTrend: SectorNpaTrend[] = [];
+  for (const sector of SECTORS.slice(0, 4)) {
+    let base = vary(2.5, 0.5);
+    for (const month of months6) {
+      base = Math.max(1, Math.min(8, base + (Math.random() - 0.5) * 0.8));
+      sectorNpaTrend.push({ sector, month, npaPercent: Math.round(base * 100) / 100 });
+    }
+  }
+  const netNpaPercent = Math.round(kpis.grossNpaPercent * 0.65 * 100) / 100;
+  const slippageRate = Math.round(vary(0.8, 0.2) * 100) / 100;
+  const provisionCoverage = Math.round(vary(72, 5) * 100) / 100;
+  const worstRegion = [...new Map(creditRisk.map((c) => [c.region, c.npaPercent])).entries()].reduce(
+    (a, b) => (a[1] > b[1] ? a : b)
+  );
+  const topRiskRegion = worstRegion[0];
+
+  // Liquidity extended data
+  const nsfrPercent = Math.round(vary(108, 5) * 100) / 100;
+  const stressScenarios: StressScenario[] = [
+    { scenario: "7-day run", lcrImpact: Math.round(vary(95, 5) * 100) / 100 },
+    { scenario: "30-day stress", lcrImpact: Math.round(vary(88, 6) * 100) / 100 },
+    { scenario: "Combined shock", lcrImpact: Math.round(vary(82, 8) * 100) / 100 },
+  ];
+  const bucket3190 = liquidity.find((l) => l.maturityBucket === "31-90 days");
+  const gap3190 = bucket3190 ? Math.round(bucket3190.gap * 100) / 100 : vary(2000, 500);
+  const hqla = Math.round(vary(85000, 5000) * 100) / 100;
+
+  // Customer extended data
+  const products = ["Savings", "Current", "FD", "Loan", "Cards", "Insurance"];
+  const productHolding: ProductHolding[] = [];
+  for (const seg of CUSTOMER_SEGMENTS) {
+    for (const prod of products.slice(0, 4)) {
+      productHolding.push({
+        segment: seg,
+        product: prod,
+        penetration: Math.round(vary(15 + Math.random() * 60, 8) * 100) / 100,
+      });
+    }
+  }
+  const crossSellRatio = Math.round(vary(2.8, 0.4) * 100) / 100;
+  const atRiskHvCustomers = Math.round(vary(120, 30));
+
+  // Fraud extended data
+  const fraudDates = ["20 Feb", "21 Feb", "22 Feb", "23 Feb", "24 Feb", "25 Feb", "26 Feb", "27 Feb"];
+  const fraudTimeline: FraudTimelineEntry[] = fraudDates.map((date, i) => ({
+    date,
+    count: Math.round(vary(8 + i * 2 + Math.random() * 10, 3)),
+    severity: pick<FraudTimelineEntry["severity"]>(["low", "medium", "high"]),
+  }));
+  const anomalyCount = fraudSignals.reduce((s, f) => s + Math.round(f.anomalyScore * 100), 0);
+  const velocityBreaches = Math.round(vary(3, 2));
+  const geoHotspots = fraudSignals.filter((f) => f.severity === "high").length;
+
+  // Growth extended data
+  const advancesTrend: AdvancesTrend[] = months6.map((month, i) => ({
+    month,
+    value: Math.round(vary(4_50_000 + i * 6000 + Math.random() * 3000, 2000) * 100) / 100,
+  }));
+  const casaTrend = months6.map((month, i) => ({
+    month,
+    value: Math.round(vary(40 + i * 0.5 + Math.random() * 2, 1) * 100) / 100,
+  }));
+
+  // Collections extended data
+  const recoveryTrend: RecoveryTrend[] = [];
+  for (const b of dpdBuckets) {
+    let base = vary(50, 10);
+    for (const month of months6) {
+      base = Math.max(1, Math.min(90, base + (Math.random() - 0.5) * 5));
+      recoveryTrend.push({ bucket: b, month, rate: Math.round(base * 100) / 100 });
+    }
+  }
+  const dpd180Bucket = collections.find((c) => c.bucket === "180+");
+  const dpd180Exposure = dpd180Bucket ? Math.round(dpd180Bucket.writeOffAmount * 1.5) : 350;
+
+  // Treasury extended data
+  const varHistory: VarHistory[] = fraudDates.slice(-7).map((date, i) => ({
+    date,
+    value: Math.round(vary(115 + i * 2 + Math.random() * 15, 5) * 100) / 100,
+  }));
+
+  // Branch extended data
+  const branchRanking = branchNetwork
+    .map((b) => ({
+      ...b,
+      score: Math.round((b.deposits / 1000 + b.advances / 1000 + b.crossSellCount * 10) * 100) / 100,
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10)
+    .map(({ branchId, region, score, deposits, advances }) => ({
+      branchId,
+      region,
+      score,
+      deposits,
+      advances,
+    }));
+  const underperformers = branchNetwork.filter((b) => b.footfallConversion < 15).length;
+
+  // Compliance extended data
+  const filingStatuses = ["on_track", "at_risk", "overdue"] as const;
+  const filingCalendar: FilingCalendarEntry[] = [
+    { name: "RBI LCR", due: "2025-03-15", status: pick(filingStatuses) },
+    { name: "IFRS 9", due: "2025-03-31", status: pick(["on_track", "at_risk"] as const) },
+    { name: "AML/KYC", due: "2025-04-10", status: pick(["on_track", "at_risk"] as const) },
+    { name: "BASEL III", due: "2025-04-30", status: "on_track" },
+  ];
+  const compliantPercent = Math.round(
+    (compliance.filter((c) => c.status === "compliant").length / compliance.length) * 100
+  );
+  const pendingFilings = compliance.filter((c) => c.status !== "compliant").length;
+
+  // Operational extended data
+  const incidentTrend: IncidentTrend[] = [];
+  for (const cat of opRiskCategories) {
+    let base = vary(2, 1);
+    for (const month of months6) {
+      base = Math.max(0, base + (Math.random() - 0.5) * 2);
+      incidentTrend.push({ category: cat, month, count: Math.round(base) });
+    }
+  }
+  const kriRedCount = operationalRisk.filter((o) => o.kriStatus === "red").length;
+
   return {
     kpis,
     creditRisk,
@@ -265,5 +492,34 @@ export function generateMockData(): MetricsPayload {
     compliance,
     operationalRisk,
     growth,
+    sectorNpaTrend,
+    sectorAggregate,
+    netNpaPercent,
+    slippageRate,
+    provisionCoverage,
+    topRiskRegion,
+    nsfrPercent,
+    stressScenarios,
+    gap3190,
+    hqla,
+    productHolding,
+    crossSellRatio,
+    atRiskHvCustomers,
+    fraudTimeline,
+    anomalyCount,
+    velocityBreaches,
+    geoHotspots,
+    advancesTrend,
+    casaTrend,
+    recoveryTrend,
+    dpd180Exposure,
+    varHistory,
+    branchRanking,
+    underperformers,
+    filingCalendar,
+    compliantPercent,
+    pendingFilings,
+    incidentTrend,
+    kriRedCount,
   };
 }
