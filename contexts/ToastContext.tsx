@@ -5,8 +5,10 @@ import {
   useCallback,
   useContext,
   useState,
+  useEffect,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 type ToastType = "success" | "error" | "info";
@@ -31,6 +33,11 @@ export function useToast() {
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const toast = useCallback((message: string, type: ToastType = "info") => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -44,14 +51,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  return (
-    <ToastContext.Provider value={{ toast }}>
-      {children}
-      <div
-        className="fixed bottom-4 right-4 z-[200] flex flex-col gap-2 pointer-events-none"
-        aria-live="polite"
-      >
-        <AnimatePresence>
+  const toastContainer = (
+    <div
+      className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"
+      aria-live="polite"
+    >
+      <AnimatePresence>
           {toasts.map((t) => (
             <motion.div
               key={t.id}
@@ -113,8 +118,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               </button>
             </motion.div>
           ))}
-        </AnimatePresence>
-      </div>
+      </AnimatePresence>
+    </div>
+  );
+
+  return (
+    <ToastContext.Provider value={{ toast }}>
+      {children}
+      {mounted &&
+        typeof document !== "undefined" &&
+        createPortal(toastContainer, document.body)}
     </ToastContext.Provider>
   );
 }

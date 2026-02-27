@@ -68,7 +68,7 @@ export function AlertThresholdsModal({ isOpen, onClose, onSave }: AlertThreshold
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md h-[85vh] max-h-[85vh] flex flex-col overflow-hidden glass-panel z-50"
+            className="fixed top-4 bottom-4 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-full sm:max-w-md flex flex-col overflow-hidden glass-panel z-50"
           >
             <div className="p-4 pb-2 shrink-0">
               <h3 className="text-lg font-bold text-white mb-1">Configurable Alert Thresholds</h3>
