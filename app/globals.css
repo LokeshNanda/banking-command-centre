@@ -9,14 +9,58 @@
   --neon-blue: #38bdf8;
 }
 
-body {
+html.dark body {
   background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e293b 100%);
   min-height: 100vh;
 }
 
+html.light body {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
+  min-height: 100vh;
+}
+
+html.light .glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+}
+
+.theme-light .text-white,
+.theme-light [class*="text-slate-100"] {
+  color: #0f172a !important;
+}
+.theme-light .text-slate-400 {
+  color: #64748b !important;
+}
+.theme-light .text-slate-300,
+.theme-light .text-slate-500 {
+  color: #475569 !important;
+}
+.theme-light .text-slate-600 {
+  color: #64748b !important;
+}
+.theme-light .text-cyan-400 {
+  color: #0891b2 !important;
+}
+.theme-light .text-amber-400 {
+  color: #d97706 !important;
+}
+.theme-light .text-red-400 {
+  color: #dc2626 !important;
+}
+.theme-light .text-emerald-400 {
+  color: #059669 !important;
+}
+.theme-light .bg-slate-800\/30 {
+  background-color: rgba(241, 245, 249, 0.8) !important;
+}
+.theme-light .border-slate-700\/50 {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
 @layer utilities {
   .glass-panel {
-    @apply bg-midnight-light/40 backdrop-blur-glass border border-white/10 rounded-xl;
+    @apply bg-midnight-light/40 backdrop-blur-md border border-white/10 rounded-xl;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   }
 }

@@ -19,15 +19,17 @@ const DASHBOARD_SLUGS = [
 ];
 
 export async function GET(request: NextRequest) {
-  const data = generateMockData();
-  const insights = generateAIInsights(data);
-
   const { searchParams } = new URL(request.url);
   const dashboard = searchParams.get("dashboard");
+  const timeRange = searchParams.get("timeRange") ?? "today";
+
+  const data = generateMockData();
+  const insights = generateAIInsights(data);
 
   const response: Record<string, unknown> = {
     ...data,
     aiInsights: insights,
+    timeRange,
   };
 
   if (dashboard && DASHBOARD_SLUGS.includes(dashboard)) {

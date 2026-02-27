@@ -179,6 +179,27 @@ export interface FilingCalendarEntry {
   status: "on_track" | "at_risk" | "overdue";
 }
 
+export interface EarlyWarning {
+  composite: number;
+  credit: number;
+  liquidity: number;
+  fraud: number;
+  ops: number;
+}
+
+export interface PeerBenchmark {
+  metric: string;
+  bankValue: number;
+  peerMedian: number;
+  peerP25?: number;
+  peerP75?: number;
+}
+
+export interface KpiHistory {
+  key: string;
+  values: number[];
+}
+
 export interface IncidentTrend {
   category: string;
   month: string;
@@ -186,6 +207,9 @@ export interface IncidentTrend {
 }
 
 export interface ExtendedMetricsPayload extends MetricsPayload {
+  earlyWarning: EarlyWarning;
+  peerBenchmarks: PeerBenchmark[];
+  kpiHistory: KpiHistory[];
   // Credit Risk
   sectorNpaTrend: SectorNpaTrend[];
   sectorAggregate: { sector: string; exposure: number; npaPercent: number }[];
@@ -480,8 +504,100 @@ export function generateMockData(): ExtendedMetricsPayload {
   }
   const kriRedCount = operationalRisk.filter((o) => o.kriStatus === "red").length;
 
+  // Early Warning Scorecard (0-100, higher = more risk)
+  const creditScore = Math.round(
+    (creditRisk.reduce((s, c) => s + c.npaPercent, 0) / creditRisk.length) * 15 +
+      (kpis.grossNpaPercent >= 6 ? 25 : kpis.grossNpaPercent >= 4 ? 15 : 5)
+  );
+  const liquidityScore = Math.round(
+    kpis.lcrPercent < 90 ? 30 : kpis.lcrPercent < 100 ? 20 : 10
+  );
+  const fraudScore = Math.round(
+    fraudSignals.filter((f) => f.severity === "high").length * 8 +
+      fraudSignals.reduce((s, f) => s + f.anomalyScore * 10, 0)
+  );
+  const opsScore = Math.round(
+    operationalRisk.filter((o) => o.kriStatus === "red").length * 15 +
+      operationalRisk.filter((o) => o.kriStatus === "amber").length * 5
+  );
+  const earlyWarning: EarlyWarning = {
+    composite: Math.round(
+      (creditScore + liquidityScore + fraudScore + opsScore) / 4
+    ),
+    credit: Math.min(100, creditScore),
+    liquidity: Math.min(100, liquidityScore),
+    fraud: Math.min(100, fraudScore),
+    ops: Math.min(100, opsScore),
+  };
+
+  // Peer Benchmarks
+  const peerBenchmarks: PeerBenchmark[] = [
+    {
+      metric: "Gross NPA %",
+      bankValue: kpis.grossNpaPercent,
+      peerMedian: vary(4.5, 0.5),
+      peerP25: 3.2,
+      peerP75: 5.8,
+    },
+    {
+      metric: "NIM %",
+      bankValue: kpis.nimPercent,
+      peerMedian: vary(3.6, 0.3),
+      peerP25: 3.2,
+      peerP75: 4.0,
+    },
+    {
+      metric: "LCR %",
+      bankValue: kpis.lcrPercent,
+      peerMedian: vary(115, 5),
+      peerP25: 108,
+      peerP75: 125,
+    },
+  ];
+
+  // KPI History for sparklines (last 6 values)
+  const retailNpa = sectorNpaTrend.filter((s) => s.sector === "Retail");
+  const kpiHistory: KpiHistory[] = [
+    {
+      key: "totalAdvances",
+      values: advancesTrend.map((t) => t.value / 1000),
+    },
+    {
+      key: "grossNpaPercent",
+      values:
+        retailNpa.length >= 6
+          ? retailNpa.slice(-6).map((s) => s.npaPercent)
+          : [3.5, 3.8, 4.0, 4.1, 4.0, kpis.grossNpaPercent],
+    },
+    {
+      key: "nimPercent",
+      values: casaTrend.map((c) => 3.2 + c.value / 100),
+    },
+    {
+      key: "lcrPercent",
+      values: [115, 116, 117, 116, 117, kpis.lcrPercent],
+    },
+    {
+      key: "churnRiskPercent",
+      values: [
+        ...customerIntelligence.slice(0, 5).map((c) => c.churnProbability),
+        kpis.churnRiskPercent,
+      ],
+    },
+    {
+      key: "enterpriseRiskIndex",
+      values: [
+        ...varHistory.slice(0, 5).map((v) => 58 + v.value / 20),
+        kpis.enterpriseRiskIndex,
+      ],
+    },
+  ];
+
   return {
     kpis,
+    earlyWarning,
+    peerBenchmarks,
+    kpiHistory,
     creditRisk,
     liquidity,
     customerIntelligence,
