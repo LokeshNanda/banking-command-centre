@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ToastProvider } from "@/contexts/ToastContext";
+import { OpenAIKeyProvider } from "@/contexts/OpenAIKeyContext";
 
 export const metadata: Metadata = {
   title: "Banking Command Centre | Enterprise Intelligence",
@@ -18,7 +19,9 @@ export default function RootLayout({
       <body className="antialiased text-slate-100 min-h-screen dark:text-slate-100 light:text-slate-900">
         <ThemeProvider>
           <ToastProvider>
-            {children}
+            <OpenAIKeyProvider>
+              {children}
+            </OpenAIKeyProvider>
           </ToastProvider>
         </ThemeProvider>
       </body>

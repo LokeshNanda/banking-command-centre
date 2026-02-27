@@ -43,6 +43,7 @@ This is a **consulting-grade demo application** designed to excite banking stake
 - **Customer Profitability & Churn Radar** — Segment health visualization
 - **Fraud & Anomaly Detection** — Timeline and severity tracking
 - **AI-Generated Executive Insights** — Contextual recommendations
+- **AI Chat** — Chat with OpenAI about your dashboard data (bring your own API key)
 - **Stress Scenario Simulator** — What-if analysis
 - **Peer Benchmark Overlay** — Competitive positioning
 - **Meeting Mode & Executive Summary** — Presentation-ready views
@@ -183,6 +184,19 @@ banking-command-centre/
 ├── vercel.json            # Vercel deployment config
 └── package.json
 ```
+
+---
+
+## 🤖 AI Chat
+
+The dashboard includes an **AI Chat** panel that lets you ask questions about your dashboard data using OpenAI. Users must add their own OpenAI API key:
+
+1. Click the **chat icon** in the header
+2. Click **Add OpenAI API Key** and enter your key from [platform.openai.com](https://platform.openai.com/api-keys)
+3. Your key is stored locally in your browser and never sent to our servers
+4. Start chatting—the AI has access to your dashboard data (KPIs, credit risk, liquidity, customer data, fraud signals, etc.)
+
+You can ask questions like "Summarise our key risk areas", "What's driving NPA in our portfolio?", or "Liquidity position and recommendations".
 
 ---
 

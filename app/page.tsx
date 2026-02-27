@@ -32,6 +32,7 @@ import { ViewPresetSelector, type ViewPreset } from "@/components/ViewPresetSele
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { NLQueryBar } from "@/components/NLQueryBar";
 import { AlertHistoryPanel } from "@/components/AlertHistoryPanel";
+import { AIChatPanel } from "@/components/AIChatPanel";
 import { recordBreachIfNeeded } from "@/lib/alertHistory";
 import type { MetricsPayload, ExtendedMetricsPayload } from "@/lib/mockBankingData";
 
@@ -80,6 +81,7 @@ export default function CommandCentrePage() {
   const [meetingMode, setMeetingMode] = useState(false);
   const [summaryMode, setSummaryMode] = useState(false);
   const [showAlertHistory, setShowAlertHistory] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(false);
   const [viewPreset, setViewPreset] = useState<ViewPreset>("default");
 
   const showPanel = (id: string) => PRESET_PANELS[viewPreset].includes(id);
@@ -156,6 +158,11 @@ export default function CommandCentrePage() {
       />
 
       <AlertHistoryPanel isOpen={showAlertHistory} onClose={() => setShowAlertHistory(false)} />
+      <AIChatPanel
+        data={data as ExtendedMetricsPayload}
+        isOpen={showAIChat}
+        onClose={() => setShowAIChat(false)}
+      />
 
       {/* Header */}
       <motion.header
@@ -219,6 +226,26 @@ export default function CommandCentrePage() {
                   strokeLinejoin="round"
                   strokeWidth={2}
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+            </button>
+            <button
+              onClick={() => setShowAIChat(true)}
+              className="p-2 rounded-lg border border-slate-600/50 hover:border-cyan-500/50 hover:bg-slate-800/30 transition-colors"
+              title="AI Chat"
+              aria-label="Open AI chat"
+            >
+              <svg
+                className="w-4 h-4 text-slate-400 hover:text-cyan-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                 />
               </svg>
             </button>
