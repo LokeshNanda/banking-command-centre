@@ -1,18 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { KPIBar } from "@/components/KPIBar";
 import { CreditRiskMap } from "@/components/CreditRiskMap";
 import { LiquidityPanel } from "@/components/LiquidityPanel";
 import { CustomerRadar } from "@/components/CustomerRadar";
 import { FraudPanel } from "@/components/FraudPanel";
+import { GrowthPanel } from "@/components/GrowthPanel";
+import { CollectionsPanel } from "@/components/CollectionsPanel";
+import { TreasuryPanel } from "@/components/TreasuryPanel";
+import { BranchNetworkPanel } from "@/components/BranchNetworkPanel";
+import { CompliancePanel } from "@/components/CompliancePanel";
+import { OperationalRiskPanel } from "@/components/OperationalRiskPanel";
 import { AIInsights } from "@/components/AIInsights";
 import type { MetricsPayload } from "@/lib/mockBankingData";
 
 const REFRESH_INTERVAL_MS = 20_000;
 
 export default function CommandCentrePage() {
+  const router = useRouter();
   const [data, setData] = useState<MetricsPayload & { aiInsights?: string[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
@@ -92,24 +100,95 @@ export default function CommandCentrePage() {
         </AnimatePresence>
       </div>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        {/* Credit Risk Heatmap */}
-        <div className="lg:row-span-2">
+      {/* Main Grid - 10 Sub-Dashboards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+        {/* 1. Credit Risk */}
+        <div
+          className="lg:col-span-2 cursor-pointer"
+          onClick={() => router.push("/dashboard/credit-risk")}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === "Enter" && router.push("/dashboard/credit-risk")}
+        >
           <CreditRiskMap data={data.creditRisk} />
         </div>
 
-        {/* Liquidity */}
-        <LiquidityPanel data={data.liquidity} />
+        {/* 2. Liquidity */}
+        <div
+          className="cursor-pointer"
+          onClick={() => router.push("/dashboard/liquidity")}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === "Enter" && router.push("/dashboard/liquidity")}
+        >
+          <LiquidityPanel data={data.liquidity} />
+        </div>
 
-        {/* Customer Radar */}
-        <CustomerRadar data={data.customerIntelligence} />
+        {/* 3. Customer Radar */}
+        <div
+          className="cursor-pointer"
+          onClick={() => router.push("/dashboard/customer-profitability")}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === "Enter" && router.push("/dashboard/customer-profitability")}
+        >
+          <CustomerRadar data={data.customerIntelligence} />
+        </div>
 
-        {/* Fraud Panel */}
-        <FraudPanel data={data.fraudSignals} />
+        {/* 4. Fraud Panel */}
+        <div
+          className="cursor-pointer"
+          onClick={() => router.push("/dashboard/fraud")}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === "Enter" && router.push("/dashboard/fraud")}
+        >
+          <FraudPanel data={data.fraudSignals} />
+        </div>
+
+        {/* 5. Growth */}
+        <div
+          className="cursor-pointer"
+          onClick={() => router.push("/dashboard/growth")}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === "Enter" && router.push("/dashboard/growth")}
+        >
+          <GrowthPanel data={data.growth} />
+        </div>
+
+        {/* 6. Collections */}
+        <CollectionsPanel
+          data={data.collections}
+          onClick={() => router.push("/dashboard/collections")}
+        />
+
+        {/* 7. Treasury */}
+        <TreasuryPanel
+          data={data.treasury}
+          onClick={() => router.push("/dashboard/treasury")}
+        />
+
+        {/* 8. Branch & Network */}
+        <BranchNetworkPanel
+          data={data.branchNetwork}
+          onClick={() => router.push("/dashboard/branch-network")}
+        />
+
+        {/* 9. Compliance */}
+        <CompliancePanel
+          data={data.compliance}
+          onClick={() => router.push("/dashboard/compliance")}
+        />
+
+        {/* 10. Operational Risk */}
+        <OperationalRiskPanel
+          data={data.operationalRisk}
+          onClick={() => router.push("/dashboard/operational-risk")}
+        />
 
         {/* AI Insights - full width */}
-        <div className="lg:col-span-2">
+        <div className="sm:col-span-2 lg:col-span-3 xl:col-span-4">
           <AIInsights insights={data.aiInsights ?? []} />
         </div>
       </div>

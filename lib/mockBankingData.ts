@@ -86,12 +86,65 @@ export interface FraudSignal {
   severity: "low" | "medium" | "high";
 }
 
+export interface CollectionsData {
+  bucket: string;
+  recoveryRate: number;
+  dpdDays: number;
+  collectionEfficiency: number;
+  writeOffAmount: number;
+}
+
+export interface TreasuryData {
+  varValue: number;
+  durationGap: number;
+  fxExposure: number;
+  mtmPnl: number;
+}
+
+export interface BranchNetworkData {
+  branchId: string;
+  region: string;
+  deposits: number;
+  advances: number;
+  crossSellCount: number;
+  atmUtilisation: number;
+  footfallConversion: number;
+}
+
+export interface ComplianceData {
+  regulation: string;
+  status: "compliant" | "pending" | "overdue";
+  amlAlertCount: number;
+  sanctionsHits: number;
+  filingDueDate: string;
+}
+
+export interface OperationalRiskData {
+  category: string;
+  incidentCount: number;
+  lossAmount: number;
+  kriStatus: "green" | "amber" | "red";
+}
+
+export interface GrowthData {
+  advancesGrowth: number;
+  casaRatio: number;
+  digitalAdoption: number;
+  channelSplit: { channel: string; share: number }[];
+}
+
 export interface MetricsPayload {
   kpis: ExecutiveKPIs;
   creditRisk: CreditRiskData[];
   liquidity: LiquidityData[];
   customerIntelligence: CustomerIntelligence[];
   fraudSignals: FraudSignal[];
+  collections: CollectionsData[];
+  treasury: TreasuryData;
+  branchNetwork: BranchNetworkData[];
+  compliance: ComplianceData[];
+  operationalRisk: OperationalRiskData[];
+  growth: GrowthData;
 }
 
 export function generateMockData(): MetricsPayload {
@@ -142,11 +195,75 @@ export function generateMockData(): MetricsPayload {
     severity: pick<FraudSignal["severity"]>(["low", "medium", "high"]),
   }));
 
+  const dpdBuckets = ["0-30", "31-60", "61-90", "91-180", "180+"];
+  const collections: CollectionsData[] = dpdBuckets.map((bucket, i) => ({
+    bucket,
+    recoveryRate: Math.round(vary(45 + (4 - i) * 12, 4) * 100) / 100,
+    dpdDays: i === 0 ? 15 : i === 1 ? 45 : i === 2 ? 75 : i === 3 ? 135 : 200,
+    collectionEfficiency: Math.round(vary(72 + Math.random() * 15, 5) * 100) / 100,
+    writeOffAmount: Math.round(vary(50 + i * 80, 20) * 100) / 100,
+  }));
+
+  const treasury: TreasuryData = {
+    varValue: Math.round(vary(125, 15) * 100) / 100,
+    durationGap: Math.round(vary(0.8, 0.2) * 100) / 100,
+    fxExposure: Math.round(vary(450, 80) * 100) / 100,
+    mtmPnl: Math.round(vary(12.5, 5) * 100) / 100,
+  };
+
+  const branchRegions = ["North", "South", "East", "West", "Central"];
+  const branchNetwork: BranchNetworkData[] = branchRegions.flatMap((region, ri) =>
+    [1, 2, 3].map((_, bi) => ({
+      branchId: `${region.slice(0, 2)}-${ri * 3 + bi + 1}`,
+      region,
+      deposits: Math.round(vary(8000 + Math.random() * 12000, 1500) * 100) / 100,
+      advances: Math.round(vary(6000 + Math.random() * 10000, 1200) * 100) / 100,
+      crossSellCount: Math.round(vary(2.5 + Math.random() * 3, 0.5) * 100) / 100,
+      atmUtilisation: Math.round(vary(55 + Math.random() * 35, 8) * 100) / 100,
+      footfallConversion: Math.round(vary(18 + Math.random() * 12, 3) * 100) / 100,
+    }))
+  );
+
+  const regulations = ["RBI LCR", "AML/KYC", "BASEL III", "IFRS 9", "DPDP"];
+  const compliance: ComplianceData[] = regulations.map((reg, i) => ({
+    regulation: reg,
+    status: pick<ComplianceData["status"]>(["compliant", "pending", "overdue"]),
+    amlAlertCount: reg === "AML/KYC" ? Math.round(vary(24, 8)) : 0,
+    sanctionsHits: reg === "AML/KYC" ? Math.round(vary(3, 2)) : 0,
+    filingDueDate: reg === "RBI LCR" ? "2025-03-15" : reg === "IFRS 9" ? "2025-03-31" : "2025-04-10",
+  }));
+
+  const opRiskCategories = ["IT", "Cyber", "Process", "Fraud", "External"];
+  const operationalRisk: OperationalRiskData[] = opRiskCategories.map((cat) => ({
+    category: cat,
+    incidentCount: Math.round(vary(2 + Math.random() * 8, 2)),
+    lossAmount: Math.round(vary(5 + Math.random() * 45, 10) * 100) / 100,
+    kriStatus: pick<OperationalRiskData["kriStatus"]>(["green", "amber", "red"]),
+  }));
+
+  const growth: GrowthData = {
+    advancesGrowth: Math.round(vary(12.5, 1.5) * 100) / 100,
+    casaRatio: Math.round(vary(42, 3) * 100) / 100,
+    digitalAdoption: Math.round(vary(68, 5) * 100) / 100,
+    channelSplit: [
+      { channel: "Mobile", share: vary(45, 3) },
+      { channel: "Internet", share: vary(28, 2) },
+      { channel: "Branch", share: vary(18, 2) },
+      { channel: "ATM", share: vary(9, 1) },
+    ],
+  };
+
   return {
     kpis,
     creditRisk,
     liquidity,
     customerIntelligence,
     fraudSignals,
+    collections,
+    treasury,
+    branchNetwork,
+    compliance,
+    operationalRisk,
+    growth,
   };
 }

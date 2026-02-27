@@ -31,6 +31,36 @@ const INSIGHT_TEMPLATES = {
     "Fraud pulse trending within normal bounds—maintain vigilance.",
     "High-severity alerts down 12% vs prior period.",
   ],
+  collections: [
+    "Collections recovery improving in 0-30 DPD bucket; focus on 180+ aging.",
+    "Write-offs trending down; collection efficiency above target.",
+    "High-value recoverable accounts in 61-90 bucket—prioritise outreach.",
+    "DPD aging pyramid shifting; early-stage buckets under control.",
+  ],
+  treasury: [
+    "VaR within limits; FX exposure elevated—review hedging strategy.",
+    "Duration gap stable; MTM P&L positive for the period.",
+    "Market risk appetite utilisation at 78%; headroom available.",
+    "FX net open position approaching limit—consider rebalancing.",
+  ],
+  branchNetwork: [
+    "Branch productivity strong in North; South region needs attention.",
+    "ATM utilisation improving; digital migration reducing branch footfall.",
+    "Cross-sell metrics above target in Central and West regions.",
+    "Underperforming branches identified; right-sizing review recommended.",
+  ],
+  compliance: [
+    "AML alert queue elevated; prioritise case review before month-end.",
+    "Regulatory filings on track; RBI LCR submission due 15 Mar.",
+    "Sanctions screening hits within normal range; no false positives.",
+    "Compliance scorecard green; one pending audit finding to close.",
+  ],
+  operationalRisk: [
+    "Operational incidents up in IT category; root cause analysis underway.",
+    "KRI traffic lights: two categories in amber—escalate to risk committee.",
+    "Loss trend within appetite; near-misses down 15% vs prior quarter.",
+    "Process and Cyber categories stable; external risk monitoring active.",
+  ],
 };
 
 function selectInsights(
@@ -82,5 +112,17 @@ export function generateAIInsights(data: MetricsPayload): string[] {
       INSIGHT_TEMPLATES.fraud[0]
   );
 
-  return insights.slice(0, 4);
+  // Rotate through new insights: collections, treasury, branch, compliance, operational
+  const extraTemplates = [
+    INSIGHT_TEMPLATES.collections,
+    INSIGHT_TEMPLATES.treasury,
+    INSIGHT_TEMPLATES.branchNetwork,
+    INSIGHT_TEMPLATES.compliance,
+    INSIGHT_TEMPLATES.operationalRisk,
+  ];
+  const extraIdx = Math.floor(seed / 200) % extraTemplates.length;
+  const extra = selectInsights(extraTemplates[extraIdx], 1, seed + 4)[0];
+  if (extra) insights.push(extra);
+
+  return insights.slice(0, 5);
 }
